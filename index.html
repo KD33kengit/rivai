@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SURPRISE</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Pacifico&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: linear-gradient(135deg, #ff9a8b 0%, #ff6a88 25%, #a18cd1 60%, #6dd5ed 100%);
+    color: #2d2438;
+    font-family: 'Baloo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  #app {
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .screen {
+    display: none;
+    min-height: 100vh;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* ───────── confetti ───────── */
+  .confetti {
+    position: absolute;
+    top: -20px;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: confettiFall linear infinite;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(540deg); }
+  }
+
+  /* ───────── balloons ───────── */
+  .balloon {
+    position: absolute;
+    bottom: -120px;
+    font-size: 48px;
+    pointer-events: none;
+    animation: balloonFloat linear infinite;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+  }
+  @keyframes balloonFloat {
+    from { transform: translateY(0) translateX(0); }
+    50% { transform: translateY(-60vh) translateX(20px); }
+    to { transform: translateY(-120vh) translateX(-10px); }
+  }
+
+  /* ───────── GREETING SCREEN ───────── */
+  #screen-greeting {
+    text-align: center;
+  }
+
+  .greeting-title {
+    font-family: 'Pacifico', cursive;
+    font-size: clamp(34px, 9vw, 60px);
+    color: #fff;
+    text-shadow: 3px 3px 0 #ff5e85, 0 4px 20px rgba(255,94,133,0.4);
+    margin-bottom: 0.25rem;
+    line-height: 1.8;
+    z-index: 2;
+    position: relative;
+  }
+
+  .greeting-name {
+    font-family: 'Pacifico', 'cursive';
+    font-size: clamp(30px, 7vw, 48px);
+    color: #fff177;
+    text-shadow: 2px 2px 0 #ff5e85;
+    margin-bottom: 1.75rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .greeting-card {
+    background: rgba(255,255,255,0.92);
+    border-radius: 24px;
+    padding: 2rem 1.75rem;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    margin-bottom: 2rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .greeting-text {
+    font-size: 16px;
+    line-height: 1.9;
+    color: #4a3a5c;
+    font-weight: 500;
+  }
+
+  .cake-emoji {
+    font-size: 56px;
+    margin-bottom: 0.5rem;
+    z-index: 2;
+    position: relative;
+    animation: wiggle 2s ease-in-out infinite;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+
+  .fun-btn {
+    background: linear-gradient(135deg, #ff5e85, #ff9a5e);
+    color: #fff;
+    border: none;
+    padding: 16px 40px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.2s;
+    box-shadow: 0 8px 20px rgba(255,94,133,0.4);
+    z-index: 2;
+    position: relative;
+  }
+  .fun-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 28px rgba(255,94,133,0.55);
+  }
+  .fun-btn:active { transform: translateY(0) scale(0.98); }
+
+  /* ───────── GAME SCREEN ───────── */
+  #screen-game {
+    background: linear-gradient(160deg, #fceabb 0%, #f8b500 100%);
+  }
+
+  .game-header { text-align: center; margin-bottom: 0.5rem; z-index: 2; }
+  .game-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 28px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #ff5e85;
+  }
+  .game-sub {
+    font-size: 13px;
+    color: #6b4226;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .iq-display {
+    font-size: 17px;
+    color: #6b4226;
+    font-weight: 700;
+    margin: 0.75rem 0;
+    text-align: center;
+    background: rgba(255,255,255,0.7);
+    padding: 6px 18px;
+    border-radius: 30px;
+    z-index: 2;
+  }
+  .iq-display span { color: #ff5e85; }
+
+  #game-canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    height: 65vh;
+    max-height: 540px;
+    background: linear-gradient(180deg, #aee1f9 0%, #d6f5e3 100%);
+    border: 4px solid #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    touch-action: none;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  }
+
+  #player {
+    position: absolute;
+    bottom: 10px;
+    width: 56px;
+    height: 56px;
+    font-size: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: left 0.05s linear;
+    z-index: 5;
+  }
+
+  .brain-emoji {
+    position: absolute;
+    font-size: 30px;
+    user-select: none;
+  }
+
+  .game-hint {
+    font-size: 12px;
+    color: #6b4226;
+    font-weight: 700;
+    margin-top: 0.75rem;
+    text-align: center;
+  }
+
+  /* ───────── POPUP ───────── */
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(45,36,56,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 1.5rem;
+  }
+  .popup-overlay.active { display: flex; }
+
+  .popup-box {
+    background: #fff;
+    border-radius: 24px;
+    padding: 2.25rem 1.75rem;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: popIn 0.3s ease;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .popup-icon { font-size: 44px; margin-bottom: 0.75rem; }
+  .popup-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 20px;
+    color: #ff5e85;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  .popup-sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; font-weight: 600; }
+
+  /* ───────── JUMPSCARE ───────── */
+  #screen-jumpscare {
+    background: #000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #screen-jumpscare.active { display: flex; }
+
+  #scareVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .shake-hard { animation: shakeHard 0.5s ease; }
+  @keyframes shakeHard {
+    0%,100% { transform: translate(0,0); }
+    10% { transform: translate(-10px,-8px); }
+    20% { transform: translate(10px,8px); }
+    30% { transform: translate(-12px,6px); }
+    40% { transform: translate(12px,-6px); }
+    50% { transform: translate(-8px,8px); }
+    60% { transform: translate(8px,-8px); }
+    70% { transform: translate(-6px,4px); }
+    80% { transform: translate(6px,-4px); }
+    90% { transform: translate(-3px,2px); }
+  }
+
+  .gift-btn-wrap {
+    position: absolute;
+    bottom: 12%;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 50;
+    opacity: 0;
+    animation: btnAppear 0.5s ease forwards;
+  }
+  @keyframes btnAppear {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .gift-btn {
+    background: linear-gradient(135deg, #ff5e85, #ff9a5e);
+    color: #fff;
+    border: none;
+    padding: 16px 44px;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-radius: 50px;
+    box-shadow: 0 0 30px rgba(255,94,133,0.7);
+    animation: giftPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes giftPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,94,133,0.6); }
+    50% { box-shadow: 0 0 40px rgba(255,94,133,0.9); }
+  }
+
+  /* ───────── LETTER SCREEN ───────── */
+  #screen-letter {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a8b 100%);
+  }
+  .letter-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  }
+  .letter-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 30px;
+    color: #ff5e85;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .letter-body {
+    font-size: 15px;
+    line-height: 2;
+    color: #4a3a5c;
+    white-space: pre-line;
+    font-weight: 500;
+  }
+  .letter-sign {
+    text-align: right;
+    margin-top: 1.5rem;
+    font-family: 'Pacifico', cursive;
+    color: #ff9a5e;
+    font-size: 18px;
+  }
+
+  .fade-in { animation: fadeIn 0.6s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mute-btn {
+    position: fixed;
+    top: 1rem; right: 1rem;
+    background: rgba(255,255,255,0.85);
+    border: none;
+    color: #ff5e85;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    font-size: 17px;
+    cursor: pointer;
+    z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+
+  <!-- background music for greeting + game screens only -->
+  <!-- Put music.mp3 in the same folder as this file -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="assets/bday-song.mp3" type="audio/mpeg">
+  </audio>
+
+<!-- SCREEN 0 — VOLUME WARNING -->
+<div class="screen active fade-in" id="screen-volume">
+  <div class="cake-emoji">🔊</div>
+  <div class="greeting-title">YOO Maharani!</div>
+  <div class="greeting-card">
+    <div class="greeting-text">
+      Before you proceed —<br><br>
+      <strong>Turn your volume up. 🔊</strong><br><br>
+      ready? ikuzo!!!
+    </div>
+  </div>
+  <button class="fun-btn" onclick="startSite()">Let's get started 🎉</button>
+</div>
+
+  <!-- ════════════════════════════════════════
+       SCREEN 1 — GREETING
+  ════════════════════════════════════════ -->
+  <div class="screen fade-in" id="screen-greeting">
+    <div id="confettiLayer"></div>
+    <div class="cake-emoji">🎂</div>
+    <div class="greeting-title">Happy Birthday</div>
+    <div class="greeting-name">Maharani! 🎉</div>
+    <div class="greeting-card">
+      <div class="greeting-text">
+        Congratulations on making it another year. <br>
+        Since your last birthday: <br>
+        The world changed. <br>
+        Technology evolved. <br>
+        AI took over the internet. <br>
+        <strong>People graduated.</strong> <br>
+        Your thesis, however, continues to be a work of fiction. <br>
+        Anyway, click on continue.
+      </div>
+    </div>
+    <button class="fun-btn" onclick="goToGame()">Continue... 🎁</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SCREEN 2 — GAME
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-game">
+    <div class="game-header">
+      <div class="game-title">Catch the Brain Cells</div>
+      <div class="game-sub">— for science 🔬 —</div>
+    </div>
+    <div class="iq-display">IQ POINTS: <span id="iqCount">0</span> / 7</div>
+    <div id="game-canvas-wrap">
+      <div id="player">👧</div>
+    </div>
+    <div class="game-hint">drag / arrow keys to move • catch 7 brains 🧠</div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       POPUP — IQ LIMIT REACHED
+  ════════════════════════════════════════ -->
+  <div class="popup-overlay" id="iqPopup">
+    <div class="popup-box">
+      <div class="popup-icon">🧠✨</div>
+      <div class="popup-title">Max IQ limit for<br>Alifya Setya Maharani<br>has reached: 7</div>
+      <div class="popup-sub">further intelligence gains denied by system</div>
+      <button class="fun-btn" onclick="openGift()">Open Gift 🎁</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SCREEN 3 — JUMPSCARE (video) + overlay button
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-jumpscare">
+    <!-- Put your jumpscare.mp4 in the same folder as this file.
+         Sound is embedded in the video itself, not a separate audio tag. -->
+    <video id="scareVideo" playsinline></video>
+    <div class="gift-btn-wrap" id="giftBtnWrap" style="display:none;">
+      <button class="gift-btn" onclick="showLetter()">Actual Gift 🎁</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SCREEN 4 — LETTER
+  ════════════════════════════════════════ -->
+  <div class="screen" id="screen-letter">
+    <div class="letter-card fade-in">
+      <div class="letter-title">that's all. 💌</div>
+      <div class="letter-body">Happy birthday, Granny.
+
+      <p>Take care of yourself, have fun, and enjoy your day. <br>
+        I hope this year brings you happiness, success, and graduation.</p>
+      <div class="letter-sign">— me, against my will</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ───────── audio ───────── */
+  const bgMusic = document.getElementById('bgMusic');
+  let muted = false;
+
+  function toggleMute() {
+    muted = !muted;
+    bgMusic.muted = muted;
+    document.getElementById('scareVideo').muted = muted;
+    document.getElementById('muteBtn').textContent = muted ? '🔇' : '🔊';
+  }
+
+  function startMusic() {
+    bgMusic.volume = 0.45;
+    bgMusic.play().catch(() => {});
+  }
+
+  function stopMusic() {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
+
+  /* ───────── confetti + balloons (greeting screen) ───────── */
+  function spawnAmbient() {
+    const layer = document.getElementById('confettiLayer');
+    const colors = ['#ff5e85', '#ff9a5e', '#fff177', '#6dd5ed', '#a18cd1', '#7ee787'];
+    for (let i = 0; i < 28; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.width = (6 + Math.random() * 6) + 'px';
+      c.style.height = (10 + Math.random() * 8) + 'px';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDuration = (4 + Math.random() * 4) + 's';
+      c.style.animationDelay = (Math.random() * 4) + 's';
+      layer.appendChild(c);
+    }
+    const balloonEmojis = ['🎈', '🎈', '🎈'];
+    for (let i = 0; i < 6; i++) {
+      const b = document.createElement('div');
+      b.className = 'balloon';
+      b.textContent = balloonEmojis[i % balloonEmojis.length];
+      b.style.left = (10 + Math.random() * 80) + 'vw';
+      b.style.animationDuration = (8 + Math.random() * 5) + 's';
+      b.style.animationDelay = (Math.random() * 5) + 's';
+      layer.appendChild(b);
+    }
+  }
+  spawnAmbient();
+
+  /* ───────── screen navigation ───────── */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active', 'fade-in');
+  }
+
+  function startSite() {
+    startMusic();
+    showScreen('screen-greeting');
+  }
+
+  function goToGame() {
+    startMusic();
+    showScreen('screen-game');
+    setTimeout(initGame, 300);
+  }
+
+  /* ───────── GAME LOGIC ───────── */
+  let iq = 0;
+  let gameActive = false;
+  let playerX = 0.5;
+  let spawnInterval;
+  let wrap, player;
+
+  function initGame() {
+    wrap = document.getElementById('game-canvas-wrap');
+    player = document.getElementById('player');
+    iq = 0;
+    document.getElementById('iqCount').textContent = '0';
+    gameActive = true;
+    playerX = 0.5;
+    positionPlayer();
+
+    document.addEventListener('keydown', handleKey);
+    wrap.addEventListener('mousemove', handleDrag);
+    wrap.addEventListener('touchmove', handleDrag, { passive: false });
+
+    spawnInterval = setInterval(spawnBrain, 850);
+  }
+
+  function handleKey(e) {
+    if (!gameActive) return;
+    const step = 0.06;
+    if (e.key === 'ArrowLeft') playerX = Math.max(0, playerX - step);
+    if (e.key === 'ArrowRight') playerX = Math.min(1, playerX + step);
+    positionPlayer();
+  }
+
+  function handleDrag(e) {
+    if (!gameActive) return;
+    e.preventDefault();
+    const rect = wrap.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let frac = (clientX - rect.left) / rect.width;
+    playerX = Math.max(0, Math.min(1, frac));
+    positionPlayer();
+  }
+
+  function positionPlayer() {
+    const rect = wrap.getBoundingClientRect();
+    const playerWidth = 56;
+    const x = playerX * (rect.width - playerWidth);
+    player.style.left = x + 'px';
+  }
+
+  function spawnBrain() {
+    if (!gameActive) return;
+    const rect = wrap.getBoundingClientRect();
+    const brain = document.createElement('div');
+    brain.className = 'brain-emoji';
+    brain.textContent = '🧠';
+    const startX = Math.random() * (rect.width - 30);
+    brain.style.left = startX + 'px';
+    brain.style.top = '-30px';
+    wrap.appendChild(brain);
+
+    let y = -30;
+    const fallSpeed = 2.2 + Math.random() * 1.3;
+
+    const fallTimer = setInterval(() => {
+      if (!gameActive) { clearInterval(fallTimer); brain.remove(); return; }
+      y += fallSpeed;
+      brain.style.top = y + 'px';
+
+      const wrapRect = wrap.getBoundingClientRect();
+      const playerRect = player.getBoundingClientRect();
+      const brainRect = brain.getBoundingClientRect();
+
+      const overlapX = brainRect.left < playerRect.right - 10 && brainRect.right > playerRect.left + 10;
+      const overlapY = brainRect.bottom > playerRect.top + 10 && brainRect.top < playerRect.bottom - 10;
+
+      if (overlapX && overlapY) {
+        clearInterval(fallTimer);
+        brain.remove();
+        catchBrain();
+      } else if (y > wrapRect.height) {
+        clearInterval(fallTimer);
+        brain.remove();
+      }
+    }, 16);
+  }
+
+  function catchBrain() {
+    iq++;
+    document.getElementById('iqCount').textContent = iq;
+    if (iq >= 7) {
+      gameActive = false;
+      clearInterval(spawnInterval);
+      document.removeEventListener('keydown', handleKey);
+      document.querySelectorAll('.brain-emoji').forEach(b => b.remove());
+      setTimeout(showPopup, 400);
+    }
+  }
+
+  function showPopup() {
+    document.getElementById('iqPopup').classList.add('active');
+  }
+
+  /* ───────── jumpscare (video) + letter ───────── */
+  function openGift() {
+      document.getElementById('iqPopup').classList.remove('active');
+      stopMusic();
+
+      showScreen('screen-jumpscare');
+      const jumpscareScreen = document.getElementById('screen-jumpscare');
+      const video = document.getElementById('scareVideo');
+      const btnWrap = document.getElementById('giftBtnWrap');
+
+      btnWrap.style.display = 'none';
+      video.src = 'jumpscare.mp4';
+      video.muted = muted;
+      video.currentTime = 0;
+      video.volume = 1.0;
+
+      video.play().catch(() => { });
+
+      jumpscareScreen.classList.add('shake-hard');
+      setTimeout(() => jumpscareScreen.classList.remove('shake-hard'), 500);
+
+      // Button shows when video ends naturally
+      video.onended = () => {
+        btnWrap.style.display = 'flex';
+      };
+
+      // Fallback in case onended doesn't fire
+      setTimeout(() => {
+        btnWrap.style.display = 'flex';
+      }, 8000);
+    }
+
+  function showLetter() {
+    const video = document.getElementById('scareVideo');
+    video.pause();
+    showScreen('screen-letter');
+    startMusic();
+  }
+</script>
+
+</body>
+</html>
